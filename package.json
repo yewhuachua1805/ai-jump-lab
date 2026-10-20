@@ -1,0 +1,17 @@
+{
+  "name": "ai-jump-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Signal lab for 6 AI stocks: live data, jump signals, 5-day scorecard, desktop alerts.",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "scripts": {
+    "start": "node --use-system-ca server.js",
+    "check": "node --use-system-ca scripts/check.js",
+    "watch": "node --use-system-ca scripts/check.js --watch",
+    "test": "node --test \"test/*.test.js\"",
+    "snapshot": "node --use-system-ca scripts/snapshot.js"
+  }
+}

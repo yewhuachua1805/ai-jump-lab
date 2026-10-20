@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Jump Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <h1>AI Jump Lab</h1>
+      <p class="sub">Live board · 6 AI stocks</p>
+    </div>
+    <div class="status">
+      <span id="market" class="pill">Connecting…</span>
+      <span id="updated" class="muted"></span>
+      <button id="notify-btn" class="btn primary" type="button">Turn on popups</button>
+      <button id="test-btn" class="btn" type="button">Test popup</button>
+    </div>
+  </header>
+
+  <main>
+    <p id="notify-help" class="notice" hidden></p>
+    <div id="board" class="board" aria-live="polite"></div>
+
+    <section class="log">
+      <div class="log-head">
+        <h2>Signal log</h2>
+        <div id="log-counts" class="counts"></div>
+      </div>
+      <p class="muted small">Every signal is saved with the price when it fired. The scorecard will check each one 5 trading days later.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>When</th><th>Stock</th><th>Signal</th><th class="num">Price</th><th>Why</th><th>5-day result</th></tr>
+          </thead>
+          <tbody id="log-body"></tbody>
+        </table>
+      </div>
+      <p id="log-empty" class="empty">No signals yet. Detectors run every minute while the US market is open (9:30am–4pm New York).</p>
+    </section>
+
+    <section class="legend">
+      <h2>How to read a card</h2>
+      <dl>
+        <div><dt>Volume pace</dt><dd>Shares traded so far today vs. a normal day (20-day average) at the same point in the session. Above 1.5× means unusually heavy trading.</dd></div>
+        <div><dt>5-day</dt><dd>Price change over the last 5 trading days, the window the scorecard will judge signals on.</dd></div>
+        <div><dt>vs 20-day high</dt><dd>How far the price is below its highest point of the last 20 days. At or above 0% is a breakout.</dd></div>
+      </dl>
+      <h2 class="rules-title">Signals</h2>
+      <dl id="rules"></dl>
+      <p class="muted small">Data: Yahoo Finance, refreshed every minute while the US market is open (9:30am–4pm New York). For practice only, not investment advice.</p>
+    </section>
+  </main>
+
+  <template id="card-template">
+    <article class="card">
+      <div class="card-head">
+        <div>
+          <h3 class="symbol"></h3>
+          <p class="name"></p>
+        </div>
+        <span class="stale pill warn" hidden>Stale</span>
+      </div>
+      <div class="badges"></div>
+      <div class="price-row">
+        <span class="price"></span>
+        <span class="change"></span>
+      </div>
+      <svg class="spark" viewBox="0 0 300 70" preserveAspectRatio="none" role="img">
+        <line class="baseline" x1="0" x2="300"></line>
+        <path class="area"></path>
+        <path class="line"></path>
+      </svg>
+      <p class="range muted small"></p>
+      <dl class="stats">
+        <div class="stat pace">
+          <dt>Volume pace</dt>
+          <dd><span class="value"></span><span class="meter"><span class="fill"></span></span></dd>
+        </div>
+        <div class="stat d5"><dt>5-day</dt><dd class="value"></dd></div>
+        <div class="stat high"><dt>vs 20-day high</dt><dd class="value"></dd></div>
+      </dl>
+    </article>
+  </template>
+
+  <div id="toasts" class="toasts" aria-live="assertive"></div>
+  <script src="app.js" type="module"></script>
+</body>
+</html>
