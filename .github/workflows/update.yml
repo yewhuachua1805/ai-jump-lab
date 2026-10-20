@@ -51,6 +51,9 @@ jobs:
           git pull --rebase
           git push
 
+      - name: Stamp asset versions so browsers load the new code after each deploy
+        run: sed -i "s/?v=dev/?v=${GITHUB_SHA::7}/g" public/index.html
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3

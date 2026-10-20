@@ -268,7 +268,7 @@ function toast(s) {
   el.className = "toast";
   el.style.setProperty("--c", `var(--sig-${s.signal})`);
   const title = document.createElement("strong");
-  title.textContent = `${s.symbol} · ${s.label} · ${money(s.price)}`;
+  title.textContent = `${s.symbol} · ${s.label}${s.price ? ` · ${money(s.price)}` : ""}`;
   const body = document.createElement("span");
   body.textContent = s.detail;
   el.append(title, body);
@@ -313,6 +313,7 @@ function onSnapshot(data) {
 //  - static: GitHub Pages serves data/board.json, rebuilt by a scheduled GitHub Action;
 //            the page polls it and pops up any signal this browser hasn't seen yet
 const STATIC_POLL_MS = 60_000;
+const MAX_ALERTS_PER_UPDATE = 3;
 const SEEN_KEY = "ajl-alerted-signals";
 let mode = null;
 
@@ -350,12 +351,14 @@ async function startStatic() {
       const res = await fetch(`data/board.json?t=${Date.now()}`, { cache: "no-store" });
       if (!res.ok) throw new Error(res.status);
       const data = await res.json();
-      if (!alerted) alerted = new Set(data.signals.map((s) => s.id));
-      for (const s of [...data.signals].reverse()) {
-        if (!alerted.has(s.id)) {
-          alerted.add(s.id);
-          if (!s.replay) alertSignal(s); // replayed history never pops up
-        }
+      const live = data.signals.filter((s) => !s.replay); // replayed history never pops up
+      if (!alerted) alerted = new Set(live.map((s) => s.id));
+      const fresh = live.filter((s) => !alerted.has(s.id)).reverse();
+      fresh.forEach((s) => alerted.add(s.id));
+      // A long gap (laptop asleep, tab closed) can bring several at once: show a few, summarize the rest.
+      fresh.slice(-MAX_ALERTS_PER_UPDATE).forEach(alertSignal);
+      if (fresh.length > MAX_ALERTS_PER_UPDATE) {
+        toast({ signal: "", symbol: "Signal log", label: `${fresh.length - MAX_ALERTS_PER_UPDATE} more new signals`, price: 0, detail: "See the signal log below." });
       }
       saveAlerted(alerted);
       onSnapshot(data);
