@@ -9,7 +9,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { TICKERS, fetchWatchlist } from "../lib/market.js";
-import { SignalLog } from "../lib/signal-log.js";
+import { SignalLog, withReplay } from "../lib/signal-log.js";
 import { RULES } from "../lib/signals.js";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -17,7 +17,7 @@ const OUT_DIR = join(ROOT, "public", "data");
 const RUN_EVERY_MS = 5 * 60_000; // matches the workflow's cron; GitHub often runs it later
 
 const log = await new SignalLog(join(ROOT, "signals", "signals.jsonl")).load();
-const { results, errors, sessionDate, marketOpen } = await fetchWatchlist();
+const { results, errors, replay, sessionDate, marketOpen } = await fetchWatchlist();
 
 if (!Object.keys(results).length) {
   console.error("Every ticker failed:", errors);
@@ -38,7 +38,7 @@ const board = {
   updatedAt: Date.now(),
   nextPollMs: RUN_EVERY_MS,
   order: TICKERS.map((t) => t.symbol),
-  signals: log.recent(),
+  signals: withReplay(log.entries, replay),
   rules: RULES,
 };
 await mkdir(OUT_DIR, { recursive: true });

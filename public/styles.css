@@ -245,3 +245,18 @@ table:has(tbody:empty) { display: none; }
 .toast strong { display: block; font-size: 14px; }
 .toast span { color: var(--muted); font-size: 13px; }
 @keyframes slidein { from { transform: translateY(12px); opacity: 0; } }
+
+.tag {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--border);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: 1px;
+}
+td.result { font-weight: 600; white-space: nowrap; }
+td.result.jump { color: var(--up); }
+.rate { color: var(--muted); font-weight: 500; }
+.btn.more { margin-top: 12px; }

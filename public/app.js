@@ -139,33 +139,77 @@ function cell(text, className) {
 }
 
 const whenFmt = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const dayFmt = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
+const LOG_PAGE = 25;
+let logLimit = LOG_PAGE;
+let lastLog = null;
+
+function whenCell(s) {
+  if (!s.replay) return cell(whenFmt.format(s.time));
+  const td = cell(`${dayFmt.format(new Date(`${s.sessionDate}T12:00:00Z`))} close `);
+  const tag = document.createElement("span");
+  tag.className = "tag";
+  tag.textContent = "replay";
+  tag.title = "Found by replaying the detectors on past daily prices, using the closing price.";
+  td.append(tag);
+  return td;
+}
+
+function resultCell(s) {
+  if (!s.result) return cell(`Pending · due ${s.scoreDate}`, "muted");
+  const { pct, maxPct, jump } = s.result;
+  const td = cell(`${pct > 0 ? "+" : pct < 0 ? "−" : ""}${Math.abs(pct).toFixed(1)}%${jump ? " · jump" : ""}`, `result ${direction(pct)}${jump ? " jump" : ""}`);
+  td.title = `Close on ${s.result.date}. Best high in those 5 days: ${maxPct >= 0 ? "+" : ""}${maxPct.toFixed(1)}%`;
+  return td;
+}
 
 function renderLog(signals, rules) {
+  lastLog = [signals, rules];
   logEmpty.hidden = signals.length > 0;
   logBody.replaceChildren(
-    ...signals.map((s) => {
+    ...signals.slice(0, logLimit).map((s) => {
       const tr = document.createElement("tr");
       if (!seenSignals.has(s.id) && seenSignals.size) tr.className = "fresh";
       tr.append(
-        cell(whenFmt.format(s.time)),
+        whenCell(s),
         cell(s.symbol),
         cell(sigChip(s.signal, s.label)),
         cell(money(s.price), "num"),
         cell(s.detail, "why"),
-        cell(`Pending · due ${s.scoreDate}`, "muted")
+        resultCell(s)
       );
       return tr;
     })
   );
   signals.forEach((s) => seenSignals.add(s.id));
 
+  const more = document.getElementById("log-more");
+  more.hidden = signals.length <= logLimit;
+  more.textContent = `Show ${Math.min(LOG_PAGE * 4, signals.length - logLimit)} more of ${signals.length - logLimit}`;
+
+  // Per signal: how many fired, and how often the scored ones became a jump.
   logCounts.replaceChildren(
     ...Object.entries(rules).map(([key, r]) => {
-      const n = signals.filter((s) => s.signal === key).length;
-      return sigChip(key, `${r.label} ${n}`);
+      const mine = signals.filter((s) => s.signal === key);
+      const scored = mine.filter((s) => s.result);
+      const jumps = scored.filter((s) => s.result.jump).length;
+      const chip = sigChip(key, `${r.label} ${mine.length}`);
+      if (scored.length) {
+        const rate = document.createElement("span");
+        rate.className = "rate";
+        rate.textContent = ` · ${Math.round((jumps / scored.length) * 100)}% jumped`;
+        rate.title = `${jumps} of ${scored.length} scored signals were up 5%+ five trading days later`;
+        chip.append(rate);
+      }
+      return chip;
     })
   );
 }
+
+document.getElementById("log-more").addEventListener("click", () => {
+  logLimit += LOG_PAGE * 4;
+  if (lastLog) renderLog(...lastLog);
+});
 
 const RULE_TEXT = {
   volumeSurge: (r) => `Volume at least ${r.minPace}× a normal day, checked from ${r.minMinutes} minutes after the open.`,
@@ -310,7 +354,7 @@ async function startStatic() {
       for (const s of [...data.signals].reverse()) {
         if (!alerted.has(s.id)) {
           alerted.add(s.id);
-          alertSignal(s);
+          if (!s.replay) alertSignal(s); // replayed history never pops up
         }
       }
       saveAlerted(alerted);

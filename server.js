@@ -8,7 +8,7 @@ import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { TICKERS, fetchWatchlist } from "./lib/market.js";
-import { SignalLog } from "./lib/signal-log.js";
+import { SignalLog, withReplay } from "./lib/signal-log.js";
 import { RULES } from "./lib/signals.js";
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -21,11 +21,13 @@ console.log(`Loaded ${log.entries.length} logged signals from data/signals.jsonl
 // ---- polling + state ----
 
 const state = { tickers: {}, errors: {}, marketOpen: false, sessionDate: null, updatedAt: null };
+let replay = [];
 const clients = new Set();
 let pollPeriod = null;
 
 async function poll() {
-  const { results, errors, period, sessionDate, marketOpen } = await fetchWatchlist();
+  const { results, errors, replay: replayed, period, sessionDate, marketOpen } = await fetchWatchlist();
+  if (replayed.length) replay = replayed;
   Object.assign(state.tickers, results); // failed tickers keep their last good data...
   state.errors = errors; // ...and are flagged as stale
   if (period) {
@@ -83,7 +85,7 @@ function snapshot() {
     mode: "live",
     order: TICKERS.map((t) => t.symbol),
     nextPollMs: nextDelay(),
-    signals: log.recent(),
+    signals: withReplay(log.entries, replay),
     rules: RULES,
   });
 }

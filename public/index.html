@@ -29,7 +29,7 @@
         <h2>Signal log</h2>
         <div id="log-counts" class="counts"></div>
       </div>
-      <p class="muted small">Every signal is saved with the price when it fired. The scorecard will check each one 5 trading days later.</p>
+      <p class="muted small">Live signals are saved with the price when they fired. Rows tagged <span class="tag">replay</span> come from running the same detectors on past daily prices, using the closing price. The 5-day result is the change from the signal price to the close 5 trading days later. A jump is +5% or more.</p>
       <div class="table-wrap">
         <table>
           <thead>
@@ -38,7 +38,8 @@
           <tbody id="log-body"></tbody>
         </table>
       </div>
-      <p id="log-empty" class="empty">No signals yet. Detectors run every minute while the US market is open (9:30am–4pm New York).</p>
+      <button id="log-more" class="btn more" type="button" hidden></button>
+      <p id="log-empty" class="empty">No signals yet. Detectors run while the US market is open (9:30am–4pm New York).</p>
     </section>
 
     <section class="legend">
